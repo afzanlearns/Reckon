@@ -1,5 +1,5 @@
 import { SYSTEM_PROMPTS } from './prompts';
-import { FALLBACK_VERDICT, SEED_HISTORY, type Task, type Verdict } from './fallbackData';
+import { FALLBACK_VERDICT, FALLBACK_AGENT_REASONING, SEED_HISTORY, type Task, type Verdict } from './fallbackData';
 import { callAgent } from './apiClient';
 
 export interface AgentPosition {
@@ -20,10 +20,19 @@ export async function runSwarm(dilemmaText: string, taskList: Task[]): Promise<S
   const taskListStr = JSON.stringify(taskList);
   const userMessage = `User's dilemma: "${dilemmaText}"\n\nCurrent task list: ${taskListStr}`;
 
+  const safeCall = async (prompt: string, msg: string, fallback: string): Promise<string> => {
+    try {
+      return await callAgent(prompt, msg);
+    } catch (err) {
+      console.error('Agent call failed, using fallback reasoning:', err);
+      return fallback;
+    }
+  };
+
   const [efficiency, wellbeing, consequence] = await Promise.all([
-    callAgent(SYSTEM_PROMPTS.efficiency, userMessage),
-    callAgent(SYSTEM_PROMPTS.wellbeing, `${userMessage}\n\nRecent pattern log: ${JSON.stringify(SEED_HISTORY)}`),
-    callAgent(SYSTEM_PROMPTS.consequence, userMessage),
+    safeCall(SYSTEM_PROMPTS.efficiency, userMessage, FALLBACK_AGENT_REASONING.efficiency),
+    safeCall(SYSTEM_PROMPTS.wellbeing, `${userMessage}\n\nRecent pattern log: ${JSON.stringify(SEED_HISTORY)}`, FALLBACK_AGENT_REASONING.wellbeing),
+    safeCall(SYSTEM_PROMPTS.consequence, userMessage, FALLBACK_AGENT_REASONING.consequence),
   ]);
 
   const positions = {
@@ -33,7 +42,13 @@ export async function runSwarm(dilemmaText: string, taskList: Task[]): Promise<S
   };
 
   const synthMessage = `Efficiency Agent said: "${efficiency}"\nWellbeing Agent said: "${wellbeing}"\nConsequence Agent said: "${consequence}"\n\nOriginal task list: ${taskListStr}`;
-  const synthRaw = await callAgent(SYSTEM_PROMPTS.synthesizer, synthMessage);
+  let synthRaw: string;
+  try {
+    synthRaw = await callAgent(SYSTEM_PROMPTS.synthesizer, synthMessage);
+  } catch (err) {
+    console.error('Synthesizer API call failed, using fallback verdict:', err);
+    return { positions, verdict: FALLBACK_VERDICT };
+  }
 
   let verdict: Verdict;
   try {
@@ -63,5 +78,10 @@ export async function runEnforcer(
     .replace('{USER_REASON}', userReason)
     .replace('{PATTERN}', pattern);
 
-  return await callAgent(filledPrompt, `The user wants to override: "${overriddenPoint}". Their reason: "${userReason}"`);
+  try {
+    return await callAgent(filledPrompt, `The user wants to override: "${overriddenPoint}". Their reason: "${userReason}"`);
+  } catch (err) {
+    console.error('Enforcer API call failed:', err);
+    return `Based on your pattern — ${pattern} — I stand by the original verdict on "${overriddenPoint}".`;
+  }
 }

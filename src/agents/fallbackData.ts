@@ -36,6 +36,12 @@ export const SEED_HISTORY: HistoryEntry[] = [
   { pattern: 'submitted work late 3 times after deprioritizing it for social plans', relevantAgent: 'consequence' },
 ];
 
+export const FALLBACK_AGENT_REASONING = {
+  efficiency: 'The most productive path is to prioritize the assignment deadline and presentation prep tonight. The gym can wait until tomorrow morning when you will be fresh, and the birthday dinner should be shortened to an appearance only to protect your work output without fully sacrificing the social commitment.',
+  wellbeing: 'Your pattern log shows you have skipped gym sessions during stressful weeks and missed family calls. Prioritizing the birthday dinner and a shortened gym session tomorrow protects your relationships and physical health, which suffer first when you over-index on productivity during high-stress periods.',
+  consequence: 'Looking at the downstream impact, failing to submit the assignment or prepare for the presentation will compound stress over the next 1-4 weeks with late penalties and a poor review. The birthday dinner is a one-time social cost that can be managed with a shortened appearance, while the gym can be rescheduled without cascading effects.',
+};
+
 export const FALLBACK_VERDICT: Verdict = {
   chosenOption: 'Prioritize the assignment and presentation prep tonight; move gym to tomorrow morning; keep the birthday dinner but shorten it.',
   rejectedOptions: [
