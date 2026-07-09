@@ -34,6 +34,8 @@ export default function AssistantPanel({ finalDecision }: Props) {
   const [timeline, setTimeline] = useState<TimedTask[] | null>(null);
   const [stageIndex, setStageIndex] = useState(-1);
   const [completedStages, setCompletedStages] = useState<number[]>([]);
+  const [notificationStatus, setNotificationStatus] = useState<'granted' | 'denied' | 'unsupported' | null>(null);
+  const [reminderText, setReminderText] = useState<string | null>(null);
 
   const handleActivate = () => {
     setStageIndex(0);
@@ -55,7 +57,10 @@ export default function AssistantPanel({ finalDecision }: Props) {
     const actions = [
       () => {},
       () => {},
-      () => fireBrowserNotification(reminder),
+      () => {
+        setReminderText(reminder?.message ?? null);
+        fireBrowserNotification(reminder, setNotificationStatus);
+      },
       () => setTimeline(built),
       () => {},
     ];
@@ -77,6 +82,11 @@ export default function AssistantPanel({ finalDecision }: Props) {
   const note = getPersonalizationNote();
   const isRunning = stageIndex >= 0 && stageIndex < STAGES.length;
   const isDone = stageIndex >= STAGES.length;
+
+  const lastTask = timeline?.[timeline.length - 1];
+  const estimatedCompletion = lastTask
+    ? lastTask.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : null;
 
   return (
     <div className="bg-[#1D1F26] border border-[#2A2D38] px-6 py-5 mt-8">
@@ -117,8 +127,35 @@ export default function AssistantPanel({ finalDecision }: Props) {
       )}
 
       {isDone && timeline && (
+        <div className="border-t border-[#2A2D38] pt-4 mb-5">
+          <p className="font-mono-label text-[11px] tracking-widest uppercase text-[#F5F3EE] mb-3">
+            Actions Completed
+          </p>
+          <div className="space-y-1.5 text-sm text-[#F5F3EE]">
+            <p>✓ Today's schedule optimized — {timeline.length} tasks sequenced</p>
+            <p>✓ High-priority tasks reordered to the front</p>
+            <p>
+              ✓ Reminder prepared
+              {notificationStatus === 'granted' && ' — sent to your browser'}
+              {notificationStatus === 'denied' && ' — notifications are blocked, showing here instead'}
+              {notificationStatus === 'unsupported' && ' — not supported in this browser, showing here instead'}
+            </p>
+            {notificationStatus !== 'granted' && reminderText && (
+              <p className="text-[#6B6E7A] italic pl-4">↳ "{reminderText}"</p>
+            )}
+            <p>✓ Calendar schedule generated ({timeline.length} events, downloadable below)</p>
+            {estimatedCompletion && <p>✓ Estimated completion: {estimatedCompletion}</p>}
+            <p>✓ Personalized recommendation updated</p>
+          </div>
+        </div>
+      )}
+
+      {isDone && timeline && (
         <>
-          <div className="space-y-2 mb-4 border-t border-[#2A2D38] pt-4">
+          <p className="font-mono-label text-[11px] tracking-widest uppercase text-[#6B6E7A] mb-2">
+            Timeline
+          </p>
+          <div className="space-y-2 mb-4">
             {timeline.map(t => (
               <div key={t.id} className="flex justify-between text-sm text-[#F5F3EE]">
                 <span>{t.title}</span>
