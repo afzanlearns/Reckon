@@ -11,7 +11,7 @@ export function recordOverrideOutcome({ relevantAgentKey, outcome }: { relevantA
 }
 
 export function getPersonalizationNote(): string {
-  if (sessionLog.wellbeingOverrides >= 2) {
+  if (sessionLog.wellbeingOverrides >= 1) {
     return "You've pushed back on wellbeing-driven calls twice this session — I'll weight health and relationship factors slightly higher in the next ruling.";
   }
   if (sessionLog.overrideAttempts === 0) {
