@@ -20,6 +20,7 @@ type OverrideState = {
 
 export default function App() {
   const [taskList] = useState<Task[]>(SEED_TASKS);
+  const originalTaskList = taskList;
   const [swarmResult, setSwarmResult] = useState<SwarmResult | null>(null);
   const [finalDecision, setFinalDecision] = useState<FinalDecision | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +41,7 @@ export default function App() {
     return buildFinalDecision({
       decision: swarm.verdict.chosenOption,
       taskList,
+      originalTaskList,
       confidence,
       rationale,
     });
@@ -107,6 +109,7 @@ export default function App() {
     const fd = buildFinalDecision({
       decision: swarm.verdict.chosenOption,
       taskList: finalTaskList,
+      originalTaskList,
       confidence: outcome === 'conceded' ? 0.7 : 0.5,
       rationale,
     });
