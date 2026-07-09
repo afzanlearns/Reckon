@@ -259,6 +259,10 @@ export default function AssistantPanel({ finalDecision }: Props) {
               </button>
             </div>
           )}
+
+          <p className="border-t border-[#2A2D38] pt-5 text-sm text-[#6B6E7A] text-center italic">
+            Your day has been reorganized. You're ready to start.
+          </p>
         </>
       )}
     </div>
